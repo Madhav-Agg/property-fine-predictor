@@ -1,0 +1,25 @@
+# Core dependencies for Property Maintenance Fines Prediction Streamlit App
+
+# Streamlit application framework
+streamlit>=1.28.0
+
+# Data manipulation and analysis
+pandas>=1.5.0
+numpy>=1.21.0
+
+# Machine learning
+scikit-learn>=1.1.0
+
+# Data visualization for Streamlit
+plotly>=5.15.0
+
+# Progress tracking (optional)
+tqdm>=4.64.0
+
+# Testing (optional)
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
+# Development tools (optional)
+black>=22.0.0
+flake8>=5.0.0
