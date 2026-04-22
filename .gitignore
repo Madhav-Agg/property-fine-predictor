@@ -129,9 +129,13 @@ dmypy.json
 .pyre/
 
 # Project specific
-# Data files (keep structure but ignore actual data)
-data/raw/*.csv
-data/processed/*.csv
+# Data files - ignore large real data but allow sample data
+# data/raw/*.csv
+# data/processed/*.csv
+data/raw/train_full.csv
+data/raw/test_full.csv
+data/raw/addresses_full.csv
+data/raw/latlons_full.csv
 
 # Model files
 models/*.pkl
@@ -142,7 +146,7 @@ logs/*.log
 
 # Prediction outputs
 predictions.csv
-*.csv
+# *.csv  # Allow sample CSV files
 
 # IDE specific
 .vscode/

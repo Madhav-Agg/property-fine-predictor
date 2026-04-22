@@ -11,8 +11,12 @@ if hasattr(sys, '_MEIPASS'):
     # PyInstaller context
     PROJECT_ROOT = Path(sys._MEIPASS)
 else:
-    # Normal execution - find project root from this file
+    # Streamlit Cloud and normal execution - find project root from this file
     PROJECT_ROOT = Path(__file__).parent.parent.parent
+    
+# Ensure we have an absolute path
+if not PROJECT_ROOT.is_absolute():
+    PROJECT_ROOT = PROJECT_ROOT.resolve()
 
 # Data paths
 DATA_DIR = PROJECT_ROOT / "data"

@@ -122,50 +122,116 @@ def initialize_data_page():
     st.header("Data Initialization")
     
     if not st.session_state.data_loaded:
+        # Check if data files exist
+        from src.utils import RAW_DATA_DIR
+        data_files = ['train.csv', 'test.csv', 'addresses.csv', 'latlons.csv']
+        missing_files = []
+        
+        for file in data_files:
+            if not (RAW_DATA_DIR / file).exists():
+                missing_files.append(file)
+        
+        if missing_files:
+            st.error("Missing data files!")
+            st.markdown("### Required Data Files")
+            st.write("The following files are required in the `data/raw/` directory:")
+            for file in data_files:
+                status = "Missing" if file in missing_files else "Found"
+                color = "red" if file in missing_files else "green"
+                st.markdown(f"- <span style='color:{color}'>**{file}**</span>: {status}", unsafe_allow_html=True)
+            
+            st.markdown("---")
+            st.markdown("### How to Fix This")
+            st.markdown("""
+            1. **For local development**: Download the required CSV files and place them in the `data/raw/` directory
+            2. **For Streamlit Cloud**: The data files should be included in the repository
+            3. **Sample data**: If you're testing, you can create sample CSV files with the correct structure
+            """)
+            
+            # Show expected structure
+            with st.expander("Expected Data Structure"):
+                st.markdown("""
+                **train.csv** should contain:
+                - ticket_id, compliance (target), and other features
+                
+                **test.csv** should contain:
+                - ticket_id and the same features as train.csv (except compliance)
+                
+                **addresses.csv** should contain:
+                - ticket_id, address
+                
+                **latlons.csv** should contain:
+                - address, lat, lon
+                """)
+            return
+        
         st.info("Click the button below to load and initialize the data. This may take a few minutes...")
         
         if st.button("Load Data", type="primary"):
             with st.spinner("Loading and preprocessing data..."):
-                app = st.session_state.app
-                result = app.initialize_data()
-                
-                if result['status'] == 'success':
-                    st.session_state.data_loaded = True
-                    st.success("Data loaded successfully!")
+                try:
+                    app = st.session_state.app
+                    result = app.initialize_data()
                     
-                    # Display data summary
-                    col1, col2, col3, col4 = st.columns(4)
-                    with col1:
-                        st.metric("Training Samples", result['train_samples'])
-                    with col2:
-                        st.metric("Test Samples", result['test_samples'])
-                    with col3:
-                        st.metric("Features", result['features'])
-                    with col4:
-                        st.metric("Models Loaded", len(result['models_loaded']))
-                    
-                    st.markdown("---")
-                    st.subheader("Data Summary")
-                    summary = app.get_data_summary()
-                    if summary['status'] == 'success':
-                        train_data = summary['training_data']
-                        test_data = summary['test_data']
+                    if result['status'] == 'success':
+                        st.session_state.data_loaded = True
+                        st.success("Data loaded successfully!")
                         
-                        col1, col2 = st.columns(2)
+                        # Display data summary
+                        col1, col2, col3, col4 = st.columns(4)
                         with col1:
-                            st.markdown("**Training Data**")
-                            st.write(f"- Samples: {train_data['samples']:,}")
-                            st.write(f"- Features: {train_data['features']}")
-                            st.write(f"- Compliance Rate: {train_data['compliance_rate']:.1%}")
-                            st.write(f"- Compliant: {train_data['compliant_count']:,}")
-                            st.write(f"- Non-compliant: {train_data['non_compliant_count']:,}")
-                        
+                            st.metric("Training Samples", result['train_samples'])
                         with col2:
-                            st.markdown("**Test Data**")
-                            st.write(f"- Samples: {test_data['samples']:,}")
-                            st.write(f"- Features: {test_data['features']}")
-                else:
-                    st.error(f"Failed to load data: {result['message']}")
+                            st.metric("Test Samples", result['test_samples'])
+                        with col3:
+                            st.metric("Features", result['features'])
+                        with col4:
+                            st.metric("Models Loaded", len(result['models_loaded']))
+                        
+                        st.markdown("---")
+                        st.subheader("Data Summary")
+                        summary = app.get_data_summary()
+                        if summary['status'] == 'success':
+                            train_data = summary['training_data']
+                            test_data = summary['test_data']
+                            
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                st.markdown("**Training Data**")
+                                st.write(f"- Samples: {train_data['samples']:,}")
+                                st.write(f"- Features: {train_data['features']}")
+                                st.write(f"- Compliance Rate: {train_data['compliance_rate']:.1%}")
+                                st.write(f"- Compliant: {train_data['compliant_count']:,}")
+                                st.write(f"- Non-compliant: {train_data['non_compliant_count']:,}")
+                            
+                            with col2:
+                                st.markdown("**Test Data**")
+                                st.write(f"- Samples: {test_data['samples']:,}")
+                                st.write(f"- Features: {test_data['features']}")
+                    else:
+                        st.error(f"Failed to load data: {result['message']}")
+                        
+                        # Provide specific guidance based on error type
+                        if "not found" in result['message'].lower():
+                            st.markdown("---")
+                            st.markdown("### Troubleshooting")
+                            st.markdown("""
+                            **Data files not found error:**
+                            1. Ensure all CSV files are in the `data/raw/` directory
+                            2. Check that file names match exactly: `train.csv`, `test.csv`, `addresses.csv`, `latlons.csv`
+                            3. Verify the files are not empty
+                            """)
+                        
+                except Exception as e:
+                    st.error(f"Unexpected error during data loading: {str(e)}")
+                    st.markdown("---")
+                    st.markdown("### Troubleshooting")
+                    st.markdown("""
+                    **Unexpected error:**
+                    1. Check the application logs for detailed error information
+                    2. Ensure all dependencies are installed correctly
+                    3. Try refreshing the page and loading data again
+                    """)
     else:
         st.success("Data is already loaded!")
         

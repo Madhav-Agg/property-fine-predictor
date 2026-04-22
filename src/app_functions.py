@@ -46,6 +46,9 @@ class PropertyFinesApp:
             # Load raw data
             train_df, test_df, address_df, latlons_df = load_data()
             
+            # Validate data structure
+            self._validate_data_structure(train_df, test_df, address_df, latlons_df)
+            
             # Merge address and lat/lon data
             self.address_latlons_df = merge_address_data(address_df, latlons_df)
             
@@ -55,8 +58,8 @@ class PropertyFinesApp:
             
             # Drop original location columns
             location_cols = ['violation_street_number', 'violation_street_name']
-            train_df = train_df.drop(location_cols, axis=1)
-            test_df = test_df.drop(location_cols, axis=1)
+            train_df = train_df.drop(location_cols, axis=1, errors='ignore')
+            test_df = test_df.drop(location_cols, axis=1, errors='ignore')
             
             # Preprocess data
             self.training_data = preprocess_training_data(train_df)
@@ -79,12 +82,50 @@ class PropertyFinesApp:
                 'models_loaded': list(self.models.keys())
             }
             
+        except FileNotFoundError as e:
+            logger.error(f"Data files not found: {e}")
+            return {
+                'status': 'error',
+                'message': f'Data files not found. Please ensure all CSV files are in the data/raw/ directory: {str(e)}'
+            }
         except Exception as e:
             logger.error(f"Error initializing data: {e}")
             return {
                 'status': 'error',
                 'message': f'Failed to initialize data: {str(e)}'
             }
+    
+    def _validate_data_structure(self, train_df: pd.DataFrame, test_df: pd.DataFrame, 
+                               address_df: pd.DataFrame, latlons_df: pd.DataFrame):
+        """Validate that data files have the expected structure."""
+        
+        # Check required columns in training data
+        required_train_cols = ['ticket_id', 'compliance']
+        missing_train_cols = [col for col in required_train_cols if col not in train_df.columns]
+        if missing_train_cols:
+            raise ValueError(f"Training data missing required columns: {missing_train_cols}")
+        
+        # Check required columns in test data
+        required_test_cols = ['ticket_id']
+        missing_test_cols = [col for col in required_test_cols if col not in test_df.columns]
+        if missing_test_cols:
+            raise ValueError(f"Test data missing required columns: {missing_test_cols}")
+        
+        # Check address data structure
+        if 'ticket_id' not in address_df.columns or 'address' not in address_df.columns:
+            raise ValueError("Address data must contain 'ticket_id' and 'address' columns")
+        
+        # Check latlons data structure
+        if 'address' not in latlons_df.columns or 'lat' not in latlons_df.columns or 'lon' not in latlons_df.columns:
+            raise ValueError("Lat/lons data must contain 'address', 'lat', and 'lon' columns")
+        
+        # Check if we have any data
+        if len(train_df) == 0:
+            raise ValueError("Training data is empty")
+        if len(test_df) == 0:
+            raise ValueError("Test data is empty")
+        
+        logger.info("Data structure validation passed")
     
     def _load_existing_models(self):
         """Load existing trained models."""

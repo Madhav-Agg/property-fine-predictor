@@ -28,11 +28,17 @@ def load_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]
     address_path = RAW_DATA_DIR / ADDRESSES_FILE
     latlons_path = RAW_DATA_DIR / LATLONS_FILE
     
-    # Check if files exist
+    # Check if files exist and provide helpful error messages
+    missing_files = []
     for path, name in [(train_path, "train"), (test_path, "test"), 
                        (address_path, "addresses"), (latlons_path, "latlons")]:
         if not path.exists():
-            raise FileNotFoundError(f"{name} data file not found: {path}")
+            missing_files.append(f"{name}: {path}")
+    
+    if missing_files:
+        error_msg = "Missing data files:\n" + "\n".join(missing_files)
+        logger.error(error_msg)
+        raise FileNotFoundError(error_msg)
     
     # Load data with proper encoding and date parsing
     dtypes = {'ticket_issued_date': 'str', 'hearing_date': 'str'}
@@ -43,19 +49,23 @@ def load_data() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]
         train_df = pd.read_csv(train_path, encoding="ISO-8859-1", 
                                dtype=dtypes, parse_dates=parse_dates, 
                                low_memory=False)
+        logger.info(f"Loaded {len(train_df)} training samples")
         
         logger.info(f"Loading test data from {test_path}")
         test_df = pd.read_csv(test_path, encoding="ISO-8859-1", 
                               dtype=dtypes, parse_dates=parse_dates, 
                               low_memory=False)
+        logger.info(f"Loaded {len(test_df)} test samples")
         
         logger.info(f"Loading address data from {address_path}")
         address_df = pd.read_csv(address_path, encoding="ISO-8859-1", 
                                 low_memory=False)
+        logger.info(f"Loaded {len(address_df)} address records")
         
         logger.info(f"Loading lat/lon data from {latlons_path}")
         latlons_df = pd.read_csv(latlons_path, encoding="ISO-8859-1", 
                                 low_memory=False)
+        logger.info(f"Loaded {len(latlons_df)} lat/lon records")
         
         logger.info("All data files loaded successfully")
         return train_df, test_df, address_df, latlons_df
