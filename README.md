@@ -2,6 +2,7 @@
 
 A modern, interactive web application for predicting blight ticket compliance in Detroit using machine learning. Built with Streamlit for an intuitive user interface.
 
+#Working Link: https://property-fine-predictor.streamlit.app/
 ## Authors
 
 Created by: Diya, Madhav, and Sushant
