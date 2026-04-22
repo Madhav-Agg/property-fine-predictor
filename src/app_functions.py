@@ -141,6 +141,39 @@ class PropertyFinesApp:
                     logger.info(f"Loaded {model_type} model")
                 except Exception as e:
                     logger.error(f"Failed to load {model_type} model: {e}")
+                    # Try to retrain the model if loading fails
+                    logger.info(f"Attempting to retrain {model_type} model...")
+                    self._train_fallback_model(model_type)
+            else:
+                logger.warning(f"No pre-trained {model_type} model found at {model_path}")
+                # Train a new model for deployment
+                logger.info(f"Training new {model_type} model for deployment...")
+                self._train_fallback_model(model_type)
+    
+    def _train_fallback_model(self, model_type: str):
+        """Train a fallback model when no pre-trained model is available."""
+        try:
+            if not self.is_initialized or self.training_data is None:
+                logger.warning(f"Cannot train {model_type} model - data not initialized")
+                return
+            
+            model = BlightComplianceModel(model_type=model_type)
+            
+            # Train with basic parameters (no hyperparameter tuning for speed)
+            training_metrics = model.train(self.training_data)
+            
+            # Save the model
+            model_file = f"{model_type}_model.pkl"
+            model.save_model(model_file)
+            
+            # Add to models dictionary
+            self.models[model_type] = model
+            
+            logger.info(f"Successfully trained and saved {model_type} model")
+            logger.info(f"Model metrics - CV AUC: {training_metrics['cv_mean']:.3f}, Training AUC: {training_metrics['train_auc']:.3f}")
+            
+        except Exception as e:
+            logger.error(f"Failed to train fallback {model_type} model: {e}")
     
     def train_model(self, model_type: str, hyperparameter_tuning: bool = False) -> Dict[str, Any]:
         """
@@ -226,10 +259,18 @@ class PropertyFinesApp:
             }
         
         if model_type not in self.models:
-            return {
-                'status': 'error',
-                'message': f'Model {model_type} not available. Train the model first.'
-            }
+            # Try to train the model if it's not available
+            logger.warning(f"Model {model_type} not available, attempting to train it...")
+            self._train_fallback_model(model_type)
+            
+            # Check again after training attempt
+            if model_type not in self.models:
+                return {
+                    'status': 'error',
+                    'message': f'Model {model_type} could not be trained. Please try training manually first.'
+                }
+            else:
+                logger.info(f"Successfully trained {model_type} model for prediction")
         
         try:
             # Convert input to DataFrame

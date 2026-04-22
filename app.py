@@ -430,9 +430,25 @@ def single_prediction_page():
     
     app = st.session_state.app
     
+    # Check if models are available, if not try to train them
     if not app.models:
-        st.warning("No trained models available. Please train a model first.")
-        return
+        st.warning("No trained models available. Training default models...")
+        
+        with st.spinner("Training default models for prediction..."):
+            # Try to train both models
+            models_trained = []
+            for model_type in ['logistic_regression', 'gradient_boosting']:
+                try:
+                    app._train_fallback_model(model_type)
+                    models_trained.append(model_type)
+                except Exception as e:
+                    st.error(f"Failed to train {model_type}: {str(e)}")
+        
+        if models_trained:
+            st.success(f"Successfully trained: {', '.join(models_trained)}")
+        else:
+            st.error("Could not train any models. Please go to Model Training page to train manually.")
+            return
     
     # Model selection
     model_type = st.selectbox(

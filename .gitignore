@@ -137,9 +137,11 @@ data/raw/test_full.csv
 data/raw/addresses_full.csv
 data/raw/latlons_full.csv
 
-# Model files
-models/*.pkl
-models/*.joblib
+# Model files - allow pre-trained models for deployment
+# models/*.pkl
+# models/*.joblib
+models/*_full.pkl
+models/*_full.joblib
 
 # Log files
 logs/*.log
